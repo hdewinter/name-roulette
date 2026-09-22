@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naam Rad met Easter Egg</title>
+    <!-- Tailwind CSS voor styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="max-w-xl w-full bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700 text-center">
+        <h1 class="text-3xl font-bold mb-2 text-indigo-400">Naam Rad van Fortuin</h1>
+        <p class="text-gray-400 text-sm mb-6">Elke naam heeft gelijke kans. Bevat de naam een 'K' (of 'k')? Dan is er 20% kans (1 op 5) dat de beurt wordt overgeslagen!</p>
+
+        <!-- Invoerveld voor namen -->
+        <div class="mb-4 text-left">
+            <label for="namesInput" class="block text-sm font-bold text-gray-300 mb-1">Namen (gescheiden door komma's):</label>
+            <input type="text" id="namesInput" value="Johan, Jasper, Andy, Dennis, Henk" 
+                class="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-indigo-500 text-white">
+        </div>
+
+        <button onclick="initWheel()" class="w-full bg-indigo-600 hover:bg-indigo-700 font-bold py-2 px-4 rounded-lg transition duration-200 mb-6 shadow-md">
+            Rad Bijwerken / Resetten
+        </button>
+
+        <!-- Rad Container -->
+        <div class="relative w-72 h-72 mx-auto mb-6 flex items-center justify-center">
+            <!-- Aanwijzer / Wijzer bovenop -->
+            <div class="absolute -top-3 z-20 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[24px] border-t-red-500 filter drop-shadow"></div>
+            
+            <!-- Canvas voor het rad -->
+            <canvas id="wheelCanvas" width="300" height="300" class="w-full h-full rounded-full shadow-lg border-4 border-gray-700"></canvas>
+            
+            <!-- Spin Knop in het midden -->
+            <button onclick="spinWheel()" id="spinBtn" class="absolute z-10 w-20 h-20 bg-gray-900 hover:bg-black border-4 border-indigo-500 rounded-full font-bold text-sm shadow-xl flex items-center justify-center transition transform active:scale-95 text-indigo-300">
+                DRAAI!
+            </button>
+        </div>
+
+        <!-- Resultaat melding -->
+        <div id="resultBox" class="min-h-[60px] p-3 bg-gray-900 rounded-lg border border-gray-700 flex items-center justify-center text-lg font-bold text-indigo-200">
+            Klik op 'DRAAI!' om te beginnen
+        </div>
+    </div>
+
+    <!-- JavaScript Logica -->
+    <script>
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const resultBox = document.getElementById('resultBox');
+        const spinBtn = document.getElementById('spinBtn');
+
+        let names = [];
+        let sectors = []; // Bevat de uitgesmeerde namen om tot minstens 20 velden te komen
+        let currentAngle = 0;
+        let isSpinning = false;
+
+        const colors = [
+            '#4F46E5', '#7C3AED', '#DB2777', '#E11D48', 
+            '#D97706', '#059669', '#2563EB', '#9333EA', 
+            '#0D9488', '#CA8A04'
+        ];
+
+        function initWheel() {
+            if (isSpinning) return;
+            
+            const rawInput = document.getElementById('namesInput').value;
+            const userNames = rawInput.split(',').map(n => n.trim()).filter(n => n.length > 0);
+
+            if (userNames.length === 0) {
+                alert('Voer minimaal één naam in!');
+                return;
+            }
+
+            names = userNames;
+            sectors = [];
+
+            // Zorg voor minimaal 20 velden door de lijst te vermenigvuldigen (met behoud van gelijke kansen)
+            let multiplier = Math.ceil(20 / names.length);
+            for (let i = 0; i < multiplier; i++) {
+                // Shuffle of volgorde behouden? Volgorde behouden zorgt voor gelijkmatige verdeling
+                names.forEach(name => sectors.push(name));
+            }
+
+            drawWheel();
+            resultBox.innerText = "Rad is klaar! Klik op 'DRAAI!'";
+        }
+
+        function drawWheel() {
+            const totalSectors = sectors.length;
+            const arcSize = (2 * Math.PI) / totalSectors;
+            const radius = canvas.width / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            sectors.forEach((sector, i) => {
+                const angle = i * arcSize + currentAngle;
+
+                // Sector tekenen
+                ctx.beginPath();
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.moveTo(radius, radius);
+                ctx.arc(radius, radius, radius, angle, angle + arcSize);
+                ctx.lineTo(radius, radius);
+                ctx.fill();
+                ctx.stroke();
+
+                // Tekst tekenen
+                ctx.save();
+                ctx.translate(radius, radius);
+                ctx.rotate(angle + arcSize / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#FFFFFF";
+                ctx.font = "bold 12px sans-serif";
+                ctx.fillText(sector, radius - 15, 5);
+                ctx.restore();
+            });
+        }
+
+        function spinWheel() {
+            if (isSpinning) return;
+            isSpinning = true;
+            spinBtn.disabled = true;
+            resultBox.innerText = "Het rad draait...";
+
+            const totalSectors = sectors.length;
+            const arcSize = (2 * Math.PI) / totalSectors;
+
+            // Willekeurige rotatie (minimaal 5 volle rondes + willekeurige extra hoek)
+            const randomExtra = Math.random() * Math.PI * 2;
+            const spins = 5 * Math.PI * 2;
+            const targetAngle = currentAngle + spins + randomExtra;
+
+            const duration = 4000; // 4 seconden
+            const startTime = performance.now();
+            const startAngle = currentAngle;
+
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Easing function (easeOutCubic voor soepel afremmen)
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                
+                currentAngle = startAngle + (targetAngle - startAngle) * easeOut;
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isSpinning = false;
+                    spinBtn.disabled = false;
+                    checkWinner();
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function checkWinner() {
+            const totalSectors = sectors.length;
+            const arcSize = (2 * Math.PI) / totalSectors;
+            
+            // Bereken welke sector onder de aanwijzer (bovenkant = -PI/2 of 1.5 * PI) valt
+            // Normaliseer currentAngle binnen 0 tot 2*PI
+            const normalizedAngle = (2 * Math.PI - (currentAngle % (2 * Math.PI))) % (2 * Math.PI);
+            
+            // De wijzer staat bovenaan (hoek 0 / 2*PI in onze berekening of gecorrigeerd)
+            // Aangepast op basis van canvas rotatie en tekenrichting:
+            const pointerOffset = (1.5 * Math.PI) % (2 * Math.PI);
+            let winningIndex = Math.floor(((normalizedAngle + pointerOffset) % (2 * Math.PI)) / arcSize);
+            winningIndex = (totalSectors - winningIndex) % totalSectors;
+
+            const winner = sectors[winningIndex];
+
+            // **Easter Egg check**: Als de naam een 'k' of 'K' bevat, 1/5 (20%) kans om over te slaan
+            const hasK = winner.toLowerCase().includes('k');
+            
+            if (hasK && Math.random() < 0.20) {
+                resultBox.innerHTML = `<span class="text-yellow-400">Easter Egg! "${winner}" bevat een 'K' en is 1/5 keer geskipped! Rad draait opnieuw...</span>`;
+                setTimeout(() => {
+                    spinWheel(); // Draai automatisch nogmaals
+                }, 2000);
+            } else {
+                resultBox.innerHTML = `🎉 Winnaar: <span class="text-indigo-400">${winner}</span>!`;
+            }
+        }
+
+        // Initieel rad laden bij opstarten
+        initWheel();
+    </script>
+</body>
+</html>
