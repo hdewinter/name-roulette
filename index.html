@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Naam Rad van Fortuin</title>
+    <title>Naam Rad met Easter Egg - v1.00.01</title>
     <!-- Tailwind CSS voor styling -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -11,7 +11,8 @@
 
     <div class="max-w-xl w-full bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700 text-center">
         <h1 class="text-3xl font-bold mb-2 text-indigo-400">Naam Rad van Fortuin</h1>
-        <p class="text-gray-400 text-sm mb-6">Elke naam heeft gelijke kans.</p>
+        <p class="text-gray-400 text-sm mb-2">Elke naam heeft gelijke kans.</p>
+        <p class="text-gray-500 text-xs mb-6 font-mono">Versie: v1.00.01</p>
 
         <!-- Invoerveld voor namen -->
         <div class="mb-4 text-left">
@@ -152,14 +153,12 @@
             const totalSectors = sectors.length;
             const arcSize = (2 * Math.PI) / totalSectors;
             
-            // Perfect uitgelijnde berekening voor de bovenste pijl (12 uur positie / -90 graden)
             const normalized = currentAngle % (2 * Math.PI);
             let winningIndex = Math.floor(((1.5 * Math.PI - normalized) % (2 * Math.PI) + 2 * Math.PI) / arcSize) % totalSectors;
 
             const winner = sectors[winningIndex];
             const hasK = winner.toLowerCase().includes('k');
             
-            // Onzichtbare easter egg (20% kans bij namen met een 'K', draait direct en stil door)
             if (hasK && Math.random() < 0.20) {
                 setTimeout(() => {
                     spinWheel();
