@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Naam Rad met Easter Egg - v1.00.01</title>
+    <title>Naam Rad met Easter Egg - v1.00.02</title>
     <!-- Tailwind CSS voor styling -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -12,7 +12,7 @@
     <div class="max-w-xl w-full bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700 text-center">
         <h1 class="text-3xl font-bold mb-2 text-indigo-400">Naam Rad van Fortuin</h1>
         <p class="text-gray-400 text-sm mb-2">Elke naam heeft gelijke kans.</p>
-        <p class="text-gray-500 text-xs mb-6 font-mono">Versie: v1.00.01</p>
+        <p class="text-gray-500 text-xs mb-6 font-mono">Versie: v1.00.02</p>
 
         <!-- Invoerveld voor namen -->
         <div class="mb-4 text-left">
@@ -56,6 +56,39 @@
         let sectors = [];
         let currentAngle = 0;
         let isSpinning = false;
+        let lastSectorIndex = -1;
+
+        // Web Audio API voor houten ratel/klepper geluidje
+        let audioCtx = null;
+
+        function playTickSound() {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+                
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.04);
+            } catch (e) {
+                // Negeer eventuele audio-restricties
+            }
+        }
 
         const colors = [
             '#4F46E5', '#7C3AED', '#DB2777', '#E11D48', 
@@ -128,6 +161,7 @@
             const duration = 4000;
             const startTime = performance.now();
             const startAngle = currentAngle;
+            lastSectorIndex = -1;
 
             function animate(currentTime) {
                 const elapsed = currentTime - startTime;
@@ -135,6 +169,18 @@
                 const easeOut = 1 - Math.pow(1 - progress, 3);
                 
                 currentAngle = startAngle + (targetAngle - startAngle) * easeOut;
+                
+                const totalSectors = sectors.length;
+                const arcSize = (2 * Math.PI) / totalSectors;
+                const normalized = currentAngle % (2 * Math.PI);
+                const pointerAngle = (1.5 * Math.PI - normalized + 2 * Math.PI) % (2 * Math.PI);
+                const currentSectorIndex = Math.floor(pointerAngle / arcSize) % totalSectors;
+
+                if (currentSectorIndex !== lastSectorIndex) {
+                    playTickSound();
+                    lastSectorIndex = currentSectorIndex;
+                }
+
                 drawWheel();
 
                 if (progress < 1) {
@@ -164,7 +210,7 @@
                     spinWheel();
                 }, 300);
             } else {
-                resultBox.innerHTML = `🎉 Winnaar: <span class="text-indigo-400">${winner}</span>!`;
+                resultBox.innerHTML = `<span class="text-indigo-400 text-2xl font-black">${winner}</span>`;
             }
         }
 
