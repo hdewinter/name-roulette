@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Naam Rad met Easter Egg</title>
+    <title>Naam Rad van Fortuin</title>
     <!-- Tailwind CSS voor styling -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -152,19 +152,18 @@
             const totalSectors = sectors.length;
             const arcSize = (2 * Math.PI) / totalSectors;
             
-            // Nauwkeurige correctie zodat de winnaar exact overeenkomt met de bovenste pijl
-            const normalized = (currentAngle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-            const pointerAngle = (1.5 * Math.PI - normalized + 2 * Math.PI) % (2 * Math.PI);
-            const winningIndex = Math.floor(pointerAngle / arcSize) % totalSectors;
+            // Perfect uitgelijnde berekening voor de bovenste pijl (12 uur positie / -90 graden)
+            const normalized = currentAngle % (2 * Math.PI);
+            let winningIndex = Math.floor(((1.5 * Math.PI - normalized) % (2 * Math.PI) + 2 * Math.PI) / arcSize) % totalSectors;
 
             const winner = sectors[winningIndex];
             const hasK = winner.toLowerCase().includes('k');
             
-            // Easter egg: stilzwijgend 1/5 keer opnieuw draaien zonder melding over de 'K'
+            // Onzichtbare easter egg (20% kans bij namen met een 'K', draait direct en stil door)
             if (hasK && Math.random() < 0.20) {
                 setTimeout(() => {
                     spinWheel();
-                }, 400); // Korte pauze en direct opnieuw draaien
+                }, 300);
             } else {
                 resultBox.innerHTML = `🎉 Winnaar: <span class="text-indigo-400">${winner}</span>!`;
             }
